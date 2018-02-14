@@ -1,10 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using iVantage.Indicator.RuntimeReporting.BusinessLayer.Entities.ReportRelatedInfo;
-using iVantage.Indicator.WebApi.Common.Security;
 
-namespace iVantage.Indicator.RuntimeReporting.BusinessLayer.Extensions
-{
     internal static class FunctionFilterExtensions {
         /// <summary>
         /// Apply current user functional permissions to function set items
@@ -57,4 +53,3 @@ namespace iVantage.Indicator.RuntimeReporting.BusinessLayer.Extensions
             } while (stack.Count != 0);
         }
     }
-}
