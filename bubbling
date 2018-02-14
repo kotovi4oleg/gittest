@@ -1,0 +1,60 @@
+using System.Collections.Generic;
+using System.Linq;
+using iVantage.Indicator.RuntimeReporting.BusinessLayer.Entities.ReportRelatedInfo;
+using iVantage.Indicator.WebApi.Common.Security;
+
+namespace iVantage.Indicator.RuntimeReporting.BusinessLayer.Extensions
+{
+    internal static class FunctionFilterExtensions {
+        /// <summary>
+        /// Apply current user functional permissions to function set items
+        /// </summary>
+        /// <param name="functionSet">Function Sets that should be modified</param>
+        /// <param name="userContext">Current user context</param>
+        public static void EnableFor(this IEnumerable<FunctionSetItem> functionSet, IUserContext userContext) {
+            var current = functionSet.GetEnumerator();
+            var permissionSet = new HashSet<string>(userContext.UserDetails.Permissions
+                .IpmPermissions?.FunctionalPermissions?.Select(permission => string.Concat(permission.Key, "_", permission.LevelNumber)) ?? new List<string>());
+            Stack<IEnumerator<FunctionSetItem>> stack = new Stack<IEnumerator<FunctionSetItem>>();
+            stack.Push(current);
+            bool preventDefault = false;
+            const int levelDiff = 1;
+            do {
+                var start = stack.Pop();
+                if (start.Current?.Items != null && start.Current.Items.All(t => t.Enabled)) start.Current.Enabled = true;
+
+                while (start.MoveNext() || preventDefault) {
+                    //to top
+                    if (start.Current == null) {
+                        start = stack.Pop();
+                        if (stack.Count > 0) {
+                            var peek = stack.Peek();
+                            if (peek?.Current != null && !peek.Current.Enabled) {
+                                peek.Current.Enabled = peek.Current.Items.All(item => item.Enabled);
+                            }
+                        }
+                        preventDefault = false;
+                        continue;
+                    }
+
+                    //operation
+                    if (!start.Current.Enabled) start.Current.Enabled = permissionSet.Contains(string.Concat(start.Current.Name, "_", (int)start.Current.LevelItem.Level - levelDiff));
+
+                    //to down
+                    if (start.Current?.Items != null) {
+                        if (start.Current.Enabled) {
+                            start.Current.Items.ToList().ForEach(item => {
+                                item.Enabled = true;
+                            });
+                        }
+
+                        stack.Push(start);
+                        var temp = start.Current.Items.GetEnumerator();
+                        preventDefault = true;
+                        start = temp;
+                    }
+                }
+            } while (stack.Count != 0);
+        }
+    }
+}
