@@ -1,0 +1,147 @@
+using Unity;
+using Unity.Interception.ContainerIntegration;
+using Microsoft.Practices.Unity.InterceptionExtension;
+using System.Collections.Generic;
+using System;
+using System.Diagnostics;
+using System.Linq;
+
+namespace ConsoleApp1
+{
+    class CostCenterEntry {
+        public string CostCenterGroupName { get; set; }
+        public long CostCenterKey { get; set; }
+        public string CostCenterName { get; set; }
+        public long? AllocatedCostCenterKey { get; set; }
+        public string AllocatedCostCenterName { get; set; }
+        public decimal? LaborCost { get; set; }
+        public decimal? NonLaborCost { get; set; }
+    }
+    class CCComparer : IEqualityComparer<CostCenterColumnKey>
+    {
+        public bool Equals(CostCenterColumnKey x, CostCenterColumnKey y)
+        {
+            return string.Equals(x.Key, y.Key);
+        }
+
+        public int GetHashCode(CostCenterColumnKey obj)
+        {
+            return obj.Key.GetHashCode();
+        }
+    }
+    class CostCenterColumnKey {
+        private CostCenterEntry _entry;
+        public CostCenterColumnKey(CostCenterEntry entry) {
+            _entry = entry;
+        }
+
+        private readonly Func<CostCenterEntry, string> _keyGetter;
+        public CostCenterColumnKey(CostCenterEntry entry, Func<CostCenterEntry, string> keyGetter) {
+            _entry = entry;
+            _keyGetter = keyGetter;
+        }
+
+        public string Key { get {
+                return _keyGetter(_entry);
+                    //string.IsNullOrEmpty(_entry.CostCenterGroupName) ? _entry.CostCenterKey.ToString() : _entry.CostCenterGroupName;
+            } }
+        public CostCenterEntry Entry => _entry;
+    }
+
+    class Program
+    {
+
+        private static IEnumerable<CostCenterEntry> Entries = new List<CostCenterEntry> {
+            new CostCenterEntry { CostCenterGroupName = "W.Clinick", CostCenterKey = 61700, CostCenterName = "A",
+                AllocatedCostCenterKey = null, AllocatedCostCenterName = null, LaborCost = 10, NonLaborCost = 10 },
+
+            new CostCenterEntry { CostCenterGroupName = "W.Clinick", CostCenterKey = 61700, CostCenterName = "A",
+                AllocatedCostCenterKey = 85610, AllocatedCostCenterName = "Patient Logistics", LaborCost = 10, NonLaborCost = 10 },
+            new CostCenterEntry { CostCenterGroupName = "W.Clinick", CostCenterKey = 61700, CostCenterName = "A",
+                AllocatedCostCenterKey = 87200, AllocatedCostCenterName = "Nursing Administration", LaborCost = 10, NonLaborCost = 10 },
+
+            new CostCenterEntry { CostCenterGroupName = "W.Clinick", CostCenterKey = 61712, CostCenterName = "B",
+                AllocatedCostCenterKey = null, AllocatedCostCenterName = null, LaborCost = 10, NonLaborCost = 10 },
+            new CostCenterEntry { CostCenterGroupName = "W.Clinick", CostCenterKey = 61712, CostCenterName = "B",
+                AllocatedCostCenterKey = 85610, AllocatedCostCenterName = "Patient Logistics", LaborCost = 10, NonLaborCost = 10 },
+
+            new CostCenterEntry { CostCenterGroupName = null, CostCenterKey = 61720, CostCenterName = "C",
+                AllocatedCostCenterKey = null, AllocatedCostCenterName = null, LaborCost = 10, NonLaborCost = 10 },
+            new CostCenterEntry { CostCenterGroupName = null, CostCenterKey = 61720, CostCenterName = "C",
+                AllocatedCostCenterKey = 85610, AllocatedCostCenterName = "Patient Logistics", LaborCost = 10, NonLaborCost = 10 },
+            new CostCenterEntry { CostCenterGroupName = null, CostCenterKey = 61720, CostCenterName = "C",
+                AllocatedCostCenterKey = 87200, AllocatedCostCenterName = "Nursing Administration", LaborCost = 10, NonLaborCost = 10 },
+
+             new CostCenterEntry { CostCenterGroupName = null, CostCenterKey = 61725, CostCenterName = "C",
+                AllocatedCostCenterKey = null, AllocatedCostCenterName = null, LaborCost = 10, NonLaborCost = 10 },
+            new CostCenterEntry { CostCenterGroupName = null, CostCenterKey = 61725, CostCenterName = "C",
+                AllocatedCostCenterKey = 85610, AllocatedCostCenterName = "Patient Logistics", LaborCost = 10, NonLaborCost = 10 },
+            new CostCenterEntry { CostCenterGroupName = null, CostCenterKey = 61725, CostCenterName = "C",
+                AllocatedCostCenterKey = 87200, AllocatedCostCenterName = "Nursing Administration", LaborCost = 10, NonLaborCost = 10 },
+
+            new CostCenterEntry { CostCenterGroupName = null, CostCenterKey = 61726, CostCenterName = "C",
+                AllocatedCostCenterKey = null, AllocatedCostCenterName = null, LaborCost = 10, NonLaborCost = 10 },
+            new CostCenterEntry { CostCenterGroupName = null, CostCenterKey = 61726, CostCenterName = "C",
+                AllocatedCostCenterKey = 85610, AllocatedCostCenterName = "Patient Logistics", LaborCost = 10, NonLaborCost = 10 },
+            new CostCenterEntry { CostCenterGroupName = null, CostCenterKey = 61726, CostCenterName = "C",
+                AllocatedCostCenterKey = 87200, AllocatedCostCenterName = "Nursing Administration", LaborCost = 10, NonLaborCost = 10 },
+
+
+            new CostCenterEntry { CostCenterGroupName = "W2.Clinick", CostCenterKey = 61700, CostCenterName = "A",
+                AllocatedCostCenterKey = null, AllocatedCostCenterName = null, LaborCost = 10, NonLaborCost = 10 },
+
+            new CostCenterEntry { CostCenterGroupName = "W2.Clinick", CostCenterKey = 61700, CostCenterName = "A",
+                AllocatedCostCenterKey = 85610, AllocatedCostCenterName = "Patient Logistics", LaborCost = 10, NonLaborCost = 10 },
+            new CostCenterEntry { CostCenterGroupName = "W2.Clinick", CostCenterKey = 61700, CostCenterName = "A",
+                AllocatedCostCenterKey = 87200, AllocatedCostCenterName = "Nursing Administration", LaborCost = 10, NonLaborCost = 10 },
+
+            new CostCenterEntry { CostCenterGroupName = "W2.Clinick", CostCenterKey = 61712, CostCenterName = "B",
+                AllocatedCostCenterKey = null, AllocatedCostCenterName = null, LaborCost = 10, NonLaborCost = 10 },
+            new CostCenterEntry { CostCenterGroupName = "W.Clinick", CostCenterKey = 61712, CostCenterName = "B",
+                AllocatedCostCenterKey = 85610, AllocatedCostCenterName = "Patient Logistics", LaborCost = 10, NonLaborCost = 10 },
+        };
+
+        static void Main(string[] args)
+        {
+            var watch = Stopwatch.StartNew();
+
+            Func<CostCenterEntry, string> costKeyGetter = (entry) => string.IsNullOrEmpty(entry.CostCenterGroupName) ? entry.CostCenterKey.ToString() : entry.CostCenterGroupName;
+            Func<CostCenterEntry, string> allocatedKeyGetter = (entry) => entry.AllocatedCostCenterKey.Value.ToString();
+
+            var linqquery = Entries.GroupBy(entry => new CostCenterColumnKey(entry, costKeyGetter), new CCComparer());
+            
+            var costcenters = new List<decimal>();
+            var allocatedcrs = new Dictionary<CostCenterColumnKey, List<decimal>>(new CCComparer());
+            foreach (var query in linqquery) {
+                var column = query.Key;//-column
+                decimal result = 0;
+                var tempallocated = new Dictionary<CostCenterColumnKey, List<decimal>>(new CCComparer());
+                foreach (var entry in query) {
+                    //home cc
+                    if (!entry.AllocatedCostCenterKey.HasValue) {
+                        result += (entry.LaborCost ?? 0) + (entry.NonLaborCost ?? 0);
+                        continue;
+                    }
+                    //allocated cc
+                    var allocatedkey = new CostCenterColumnKey(entry, allocatedKeyGetter);
+                    if (!tempallocated.ContainsKey(allocatedkey)) {
+                        tempallocated.Add(allocatedkey, new List<decimal>());
+                    }
+                    tempallocated[allocatedkey].Add(entry.LaborCost ?? 0);
+                }
+
+                tempallocated.Keys.ToList().ForEach(key => {
+                    if (!allocatedcrs.ContainsKey(key)) allocatedcrs.Add(key, new List<decimal>());
+                        allocatedcrs[key].Add(tempallocated[key].Sum());
+                    });
+
+                costcenters.Add(result);
+            }
+
+            Console.WriteLine(watch.ElapsedMilliseconds);
+
+
+            Console.ReadKey();
+        }
+    }
+}
